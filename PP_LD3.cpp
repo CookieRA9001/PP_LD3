@@ -89,6 +89,13 @@ float opencl_montecarlo(
 }
 
 int main() {
+	#if CL_DEVICE_IMAGE_SUPPORT == CL_FALSE 
+		std::cout << "Images not supported on this OpenCL version.\n";
+		return 0;
+	#endif
+
+	std::cout << "Starting...\n";
+
 	long long elapsed = 0;
 	std::chrono::system_clock::time_point start, end;
 
@@ -104,5 +111,5 @@ int main() {
 	elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 	std::cout << "Elapsed time = " << elapsed << "ms\n";*/
 
-	//std::cin.get();
+	std::cin.get();
 }
