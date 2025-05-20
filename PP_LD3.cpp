@@ -131,23 +131,23 @@ int main() {
 	Shape* shapes  = new Shape[5];
 
 	shapes[0].scale = make_float3(0.5f);
-	shapes[0].pos = make_float3(0.0f, 0.0f, -100.0f);
+	shapes[0].pos = make_float3(0.0f, 0.0f, 3.0f);
 	shapes[0].color = make_float3(0.75f, 0.0f, 0.05f);
 	shapes[0].shape_type = 0;
 	shapes[1].scale = make_float3(0.2f);
-	shapes[1].pos = make_float3(-0.5f, -0.2f, -80.0f);
+	shapes[1].pos = make_float3(-0.5f, -0.2f, 2.5f);
 	shapes[1].color = make_float3(0.1f, 0.1f, 0.9f);
 	shapes[1].shape_type = 0;
 	shapes[2].scale = make_float3(0.2f);
-	shapes[2].pos = make_float3(0.5f, 0.3f, -120.0f); 
+	shapes[2].pos = make_float3(0.5f, 0.3f, 3.5f); 
 	shapes[2].color = make_float3(0.1f, 0.1f, 0.85f);
 	shapes[2].shape_type = 0;
 	shapes[3].scale = make_float3(0.5f);
-	shapes[3].pos = make_float3(1.5f, 0.0f, -150.0f);
+	shapes[3].pos = make_float3(1.5f, 0.0f, 4.0f);
 	shapes[3].color = make_float3(1.0f, 1.0f, 1.0f);
 	shapes[3].shape_type = 2;
 	shapes[4].scale = make_float3(5.0f, 5.0f);
-	shapes[4].pos = make_float3(0.0f,-1.2f,-100.0f);
+	shapes[4].pos = make_float3(0.0f,-1.2f,3.0f);
 	shapes[4].color = make_float3(0.1f, 0.1f, 0.1f);
 	shapes[4].shape_type = 1;
 

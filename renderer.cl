@@ -16,14 +16,15 @@ struct Shape{
 };
 
 struct Ray createCamRay(const int x_coord, const int y_coord, const int width, const int height){
-	float fx = (float)x_coord / (float)width;
-	float fy = (float)y_coord / (float)height;
-	float fx2 = (fx - 0.5f) * ((float)(width) / (float)(height));
-	float fy2 = fy - 0.5f;
-	float3 pixel_pos = (float3)(fx2, -fy2, 0.0f);
 	struct Ray ray;
-	ray.origin = (float3)(0.0f, 0.0f, 70.0f);
-	ray.dir = normalize(pixel_pos - ray.origin);
+
+	ray.origin = (float3)(0.0f, 0.0f, 0.0f);
+	float3 f = (float3)((float)width / (float)height, 1.0f, 0.5f);
+	ray.dir = normalize((float3)(
+		((float)x_coord + 0.5f) * f.x / (float)width - f.x * 0.5f,
+		f.y * 0.5f - ((float)y_coord + 0.5f) * f.y / (float)height,
+		f.z
+	));
 
 	return ray;
 }
