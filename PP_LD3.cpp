@@ -57,7 +57,7 @@ void setup_opencl() {
 	context = Context(devices);
 	program = Program(context, sources);
 	queue = CommandQueue(context, device);
-	auto err = program.build({ device });
+	auto err = program.build();
 	kernel = Kernel(program, "render_kernel");
 
 	if (err == CL_BUILD_PROGRAM_FAILURE) {
@@ -87,7 +87,7 @@ void render_image(
 	kernel.setArg(5, shape_count);
 	kernel.setArg(6, light);
 	kernel.setArg(7, paramBuffer);
-	queue.enqueueNDRangeKernel(kernel, NULL, IMG_WIDTH * IMG_HEIGHT, LOCAL_WORK_SIZE);
+	queue.enqueueNDRangeKernel(kernel, NullRange, IMG_WIDTH * IMG_HEIGHT, LOCAL_WORK_SIZE);
 	queue.enqueueReadBuffer(cl_output, CL_TRUE, 0, IMG_WIDTH * IMG_HEIGHT * sizeof(cl_float3), cpu_output);
 	queue.finish();
 }
@@ -97,8 +97,8 @@ inline int toInt(float x) { return int(clamp(x) * 255 + .5); }
 void saveImage(string name) { // save image to file .PPM
 	std::cout << "Saving image...\n";
 	name = name + ".ppm";
-	FILE* f = NULL;
-	if (fopen_s(&f, name.c_str(), "w") != 0) {
+	FILE* f = fopen(name.c_str(), "w");
+	if (f == 0) {
 		perror("Failed to open file");
 		return;
 	}
