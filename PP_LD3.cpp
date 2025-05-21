@@ -33,7 +33,9 @@ struct Shape {
 	cl_float3 pos;
 	cl_float3 color;
 	int shape_type = 0; // 0 = sphere, 1 = plane, 2 = cilinder
-	float f4, f5, f6; // mem spacing to align to opencl shape struct
+	float diffuce = 0;
+	float sheen = 0;
+	float ambiant = 1.0f;
 };
 
 struct Light {
@@ -56,7 +58,7 @@ void setup_opencl() {
 	program = Program(context, sources);
 	queue = CommandQueue(context, device);
 	auto err = program.build({ device });
-	kernel = Kernel(program, "render_kernel"); 
+	kernel = Kernel(program, "render_kernel");
 
 	if (err == CL_BUILD_PROGRAM_FAILURE) {
 		size_t log_size;
@@ -67,12 +69,16 @@ void setup_opencl() {
 	}
 }
 
-void render_image(cl_float3 sky_color, Light light, Shape* shapes, int shape_count)
-{
+void render_image(
+	cl_float3 sky_color, Light light, Shape* shapes, int shape_count,
+	float shadow_strength = 1.5f, float ambiant_strength = 1.0f, float sheen_strength = 1.0f, float diffuce_strength = 1.0f, float base_color_strength = 0.0f
+) {
 	std::cout << "Rendering...\n";
 	cpu_output = new cl_float3[IMG_WIDTH * IMG_HEIGHT];
 	cl_output = Buffer(context, CL_MEM_WRITE_ONLY, IMG_WIDTH * IMG_HEIGHT * sizeof(cl_float3));
 	Buffer shape_buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Shape) * shape_count, shapes);
+	std::vector<float> params = { shadow_strength, ambiant_strength, sheen_strength, diffuce_strength, base_color_strength };
+	cl::Buffer paramBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float) * params.size(), params.data());
 	kernel.setArg(0, cl_output);
 	kernel.setArg(1, IMG_WIDTH);
 	kernel.setArg(2, IMG_HEIGHT);
@@ -80,6 +86,7 @@ void render_image(cl_float3 sky_color, Light light, Shape* shapes, int shape_cou
 	kernel.setArg(4, shape_buffer);
 	kernel.setArg(5, shape_count);
 	kernel.setArg(6, light);
+	kernel.setArg(7, paramBuffer);
 	queue.enqueueNDRangeKernel(kernel, NULL, IMG_WIDTH * IMG_HEIGHT, LOCAL_WORK_SIZE);
 	//queue.finish();
 	queue.enqueueReadBuffer(cl_output, CL_TRUE, 0, IMG_WIDTH * IMG_HEIGHT * sizeof(cl_float3), cpu_output);
@@ -108,8 +115,16 @@ cl_float3 make_float3(float x = 0, float y = 0, float z = 0) {
 	f.s[0] = x;
 	f.s[1] = y;
 	f.s[2] = z;
-	f.s[3] = 0.0f; 
+	f.s[3] = 0.0f;
 	return f;
+}
+
+Light makeTheSUN(cl_float3 color, cl_float3 dir) {
+	float mag = sqrt(dir.s[0] * dir.s[0] + dir.s[1] * dir.s[1] + dir.s[2] * dir.s[2]);
+	Light light;
+	light.color = color;
+	light.dir = make_float3(dir.s[0] / mag, dir.s[1] / mag, dir.s[2] / mag); // normalize direction
+	return light;
 }
 
 int main() {
@@ -125,34 +140,50 @@ int main() {
 
 	setup_opencl();
 
-	Light sun;
-	sun.color = make_float3(1.0f, 1.0f, 1.0f);
-	sun.dir = make_float3(0.0f, 0.0f, 1.0f);
-	Shape* shapes  = new Shape[5];
+	Light sun = makeTheSUN(make_float3(1.0f, 0.8f, 0.8f), make_float3(-1.0f, -1.0f, 0.75f));
+	Shape* shapes = new Shape[5];
 
 	shapes[0].scale = make_float3(0.5f);
 	shapes[0].pos = make_float3(0.0f, 0.0f, 3.0f);
 	shapes[0].color = make_float3(0.75f, 0.0f, 0.05f);
 	shapes[0].shape_type = 0;
+	shapes[0].diffuce = 0.7f;
+	shapes[0].sheen = 0.1f;
+	shapes[0].ambiant = 0.5f;
 	shapes[1].scale = make_float3(0.2f);
 	shapes[1].pos = make_float3(-0.5f, -0.2f, 2.5f);
 	shapes[1].color = make_float3(0.1f, 0.1f, 0.9f);
 	shapes[1].shape_type = 0;
+	shapes[1].diffuce = 0.4f;
+	shapes[1].sheen = 0.4f;
+	shapes[1].ambiant = 0.7f;
 	shapes[2].scale = make_float3(0.2f);
-	shapes[2].pos = make_float3(0.5f, 0.3f, 3.5f); 
+	shapes[2].pos = make_float3(0.5f, 0.3f, 3.5f);
 	shapes[2].color = make_float3(0.1f, 0.1f, 0.85f);
-	shapes[2].shape_type = 0;
+	shapes[2].diffuce = 0.4f;
+	shapes[2].sheen = 0.4f;
+	shapes[2].ambiant = 0.7f;
 	shapes[3].scale = make_float3(0.5f);
 	shapes[3].pos = make_float3(1.5f, 0.0f, 4.0f);
-	shapes[3].color = make_float3(1.0f, 1.0f, 1.0f);
+	shapes[3].color = make_float3(0.95f, 0.95f, 0.95f);
 	shapes[3].shape_type = 2;
+	shapes[3].diffuce = 0.7f;
+	shapes[3].sheen = 0.1f;
+	shapes[3].ambiant = 0.8f;
 	shapes[4].scale = make_float3(5.0f, 5.0f);
-	shapes[4].pos = make_float3(0.0f,-1.2f,3.0f);
-	shapes[4].color = make_float3(0.1f, 0.1f, 0.1f);
-	shapes[4].shape_type = 1;
+	shapes[4].pos = make_float3(0.0f, -1.2f, 3.0f);
+	shapes[4].color = make_float3(0.1f, 0.5f, 0.1f);
+	shapes[4].shape_type = 1; 
+	shapes[4].diffuce = 0.5f;
+	shapes[4].sheen = 0.05f;
+	shapes[4].ambiant = 0.8f;
 
-	render_image(make_float3(0.8f, 0.8f, 0.8f), sun, shapes, 5); 
-	//render_image(make_float3(0.2f, 0.2f, 1.0f));
+	start = std::chrono::system_clock::now();
+	render_image(make_float3(0.7f, 0.7f, 0.9f), sun, shapes, 5);
+	std::cout << "Scene Rendered!\n";
+	end = std::chrono::system_clock::now();
+	elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	std::cout << "Elapsed time = " << elapsed << "ms\n";
 	saveImage();
 
 	delete[] cpu_output;
