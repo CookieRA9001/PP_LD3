@@ -1,6 +1,6 @@
 #define CL_HPP_TARGET_OPENCL_VERSION 300
 // g++ -std=c++11 -I./include -L./lib -lOpenCL -o LD2 PP_LD2.cpp
-// qsub - l nodes = 1:ppn = 1 : gpus = 1 - I
+// qsub -l nodes=1:ppn=1:gpus=1 -I
 
 #include <iostream>
 #include <fstream>
