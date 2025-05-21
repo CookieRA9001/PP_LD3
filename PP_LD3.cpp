@@ -88,24 +88,23 @@ void render_image(
 	kernel.setArg(6, light);
 	kernel.setArg(7, paramBuffer);
 	queue.enqueueNDRangeKernel(kernel, NULL, IMG_WIDTH * IMG_HEIGHT, LOCAL_WORK_SIZE);
-	//queue.finish();
 	queue.enqueueReadBuffer(cl_output, CL_TRUE, 0, IMG_WIDTH * IMG_HEIGHT * sizeof(cl_float3), cpu_output);
 	queue.finish();
 }
 
 inline float clamp(float x) { return x < 0.0f ? 0.0f : x > 1.0f ? 1.0f : x; }
 inline int toInt(float x) { return int(clamp(x) * 255 + .5); }
-void saveImage() { // save image to file .PPM
+void saveImage(string name) { // save image to file .PPM
 	std::cout << "Saving image...\n";
+	name = name + ".ppm";
 	FILE* f = NULL;
-	if (fopen_s(&f, "_res.ppm", "w") != 0) {
+	if (fopen_s(&f, name.c_str(), "w") != 0) {
 		perror("Failed to open file");
 		return;
 	}
 	fprintf(f, "P3\n%d %d\n%d\n", IMG_WIDTH, IMG_HEIGHT, 255);
 
 	for (int i = 0; i < IMG_WIDTH * IMG_HEIGHT; i++) {
-		//printf("%d %d %d ", toInt(cpu_output[i].s[0]), toInt(cpu_output[i].s[1]), toInt(cpu_output[i].s[2]));
 		fprintf(f, "%d %d %d ", toInt(cpu_output[i].s[0]), toInt(cpu_output[i].s[1]), toInt(cpu_output[i].s[2]));
 	}
 }
@@ -179,12 +178,28 @@ int main() {
 	shapes[4].ambiant = 0.8f;
 
 	start = std::chrono::system_clock::now();
+	render_image(make_float3(0.7f, 0.7f, 0.9f), sun, shapes, 5, 0, 0, 0, 0, 1);
+	std::cout << "Scene Rendered!\n";
+	end = std::chrono::system_clock::now();
+	elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	std::cout << "Elapsed time = " << elapsed << "ms\n";
+	saveImage("res1");
+
+	start = std::chrono::system_clock::now();
+	render_image(make_float3(0.7f, 0.7f, 0.9f), sun, shapes, 5, 0);
+	std::cout << "Scene Rendered!\n";
+	end = std::chrono::system_clock::now();
+	elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	std::cout << "Elapsed time = " << elapsed << "ms\n";
+	saveImage("res2");
+
+	start = std::chrono::system_clock::now();
 	render_image(make_float3(0.7f, 0.7f, 0.9f), sun, shapes, 5);
 	std::cout << "Scene Rendered!\n";
 	end = std::chrono::system_clock::now();
 	elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 	std::cout << "Elapsed time = " << elapsed << "ms\n";
-	saveImage();
+	saveImage("res3");
 
 	delete[] cpu_output;
 	std::cout << "Done!\n";

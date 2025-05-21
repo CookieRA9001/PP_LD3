@@ -116,7 +116,6 @@ __kernel void render_kernel(
 	__global const struct Shape* world_geomerty, int world_geo_size, struct Light sun,
 	__global const float* params
 ) {
-	//printf("render_kernel\n");
 	float shadow_strength = params[0];
 	float ambiant_strength = params[1];
 	float sheen_strength = params[2];
@@ -126,10 +125,6 @@ __kernel void render_kernel(
 	const int gid = get_global_id(0);
 	int x = gid % width;
 	int y = gid / width;
-
-	//float fx = (float)x / (float)width;
-	//float fy = (float)y / (float)height;
-	//output[gid] = (float3)(fx, fy, 0);
 
 	struct Ray camray = createCamRay(x, y, width, height);
 	float t = 1e20;
